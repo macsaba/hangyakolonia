@@ -40,7 +40,7 @@ int main() {
     //float dist [NR_OF_DATAPOINTS][NR_OF_DATAPOINTS];
 
     //set connections btw nodes
-    
+
     connections[0][1]=1; connections[0][3]=1; connections[1][0]=1; connections[1][2]=1; connections[1][5]=1; connections[2][1]=1; connections[2][3]=1; connections[2][4]=1; connections[3][0]=1; connections[3][2]=1;
     connections[3][8]=1; connections[4][2]=1; connections[4][5]=1; connections[5][1]=1; connections[5][4]=1; connections[5][8]=1; connections[6][7]=1; connections[7][6]=1; connections[7][8]=1; connections[7][9]=1;
     connections[8][3]=1; connections[8][9]=1; connections[8][5]=1; connections[8][7]=1; connections[9][7]=1; connections[9][8]=1;
@@ -57,7 +57,9 @@ int main() {
           route[ant][0] = start;
           length[ant] = 0;
           lengthMin[ant] = FLT_MAX;
+          int step = 0;
           //TODO: a két for ciklust össze lehetne vonni, ciklusváltozók eggyel eltolva, az első nevező számítást elvégezni itt
+          //PROBABILITY, calculates probabilities
           for(int r = 0; r < NR_OF_DATAPOINTS; r++)
           {
             //probability denominator
@@ -67,11 +69,26 @@ int main() {
                 pDenominator += pow(tau[r][s], ALPHA)*pow((1/dist[r][s]), BETA)*connections[r][s];
             }
             //probability matrix
-            printf("%f\n", pDenominator);
             for(int s = 0; s < NR_OF_DATAPOINTS; s++)
             {
-                int a = 1;
+                p[r][s] = (pow(tau[r][s], ALPHA)*pow((1/dist[r][s]), BETA)*connections[r][s])/pDenominator;
             }
+          }
+
+          //ROULETTE
+          float roulette = rand(100000)/100000;
+          float sumP = 0;
+
+          for(int s = 0; s < NR_OF_DATAPOINTS; s++)
+          {
+              sumP += p[route[ant][step]][s];
+              if(roulette < sumP)
+              {
+                  step++;
+                  route[ant][step] = s;
+                  length[ant] += dist[route[ant][step - 1]][route[ant][step]]
+                  break;
+              }
           }
       }
     }

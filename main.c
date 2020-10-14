@@ -26,6 +26,7 @@ int main() {
     float length [NR_OF_ANTS];
     float lengthMin [NR_OF_ANTS];
     int connections [NR_OF_DATAPOINTS][NR_OF_DATAPOINTS];
+    int numOfConnections [NR_OF_DATAPOINTS];
     //TODO: értelmes taut adni
     for(int r = 0; r < NR_OF_DATAPOINTS; r++)
     {
@@ -45,8 +46,21 @@ int main() {
     connections[3][8]=1; connections[4][2]=1; connections[4][5]=1; connections[5][1]=1; connections[5][4]=1; connections[5][8]=1; connections[6][7]=1; connections[7][6]=1; connections[7][8]=1; connections[7][9]=1;
     connections[8][3]=1; connections[8][9]=1; connections[8][5]=1; connections[8][7]=1; connections[9][7]=1; connections[9][8]=1;
 
+
+
     float** dist = getDistances(NR_OF_DATAPOINTS, coords, &connections[0][0]);
     //iteration
+
+    //calculate the number of connections
+    for(int r = 0; r < NR_OF_DATAPOINTS; r++)
+    {
+        numOfConnections[r] = 0;
+        for(int s = 0; s < NR_OF_DATAPOINTS; s++)
+        {
+            numOfConnections[r] += connections[r][s];
+        }
+    }
+
     for(int i = 0; i < NR_OF_ITERATIONS; i++)
     {
       //TODO: clear dtau
@@ -74,22 +88,55 @@ int main() {
                 p[r][s] = (pow(tau[r][s], ALPHA)*pow((1/dist[r][s]), BETA)*connections[r][s])/pDenominator;
             }
           }
-
-          //ROULETTE
-          float roulette = rand(100000)/100000;
-          float sumP = 0;
-
-          for(int s = 0; s < NR_OF_DATAPOINTS; s++)
+          for(int step = 0; step < 20; step++)
           {
-              sumP += p[route[ant][step]][s];
-              if(roulette < sumP)
+              //ROULETTE
+              float roulette = rand()/RAND_MAX;
+              float sumP = 0;
+              int selection = 0;
+              int current = route[ant][step];
+              int loop = 0;
+
+              for(int s = 0; s < NR_OF_DATAPOINTS; s++)
+              {
+                  sumP += p[route[ant][step]][s];
+                  if(roulette < sumP)
+                  {
+                      selection = s;
+                      /*step++;
+                      route[ant][step] = s;
+                      length[ant] += dist[route[ant][step - 1]][route[ant][step]];*/
+                      break;
+                  }
+              }
+              //check finish
+              if(selection == destination)
               {
                   step++;
                   route[ant][step] = s;
-                  length[ant] += dist[route[ant][step - 1]][route[ant][step]]
+                  length[ant] += dist[route[ant][step - 1]][route[ant][step]];
                   break;
               }
+
+              //check loop
+              for(int j = 0; j < step; j++)
+              {
+                  if(route[ant][j] == selection)
+                  {
+                      loop = 1;
+                      break;
+                  }
+              }
+
+              if(numOfConnections[selection] == 1 || loop == 1)
+              {
+                  //TODO: lépj vissza egy elágazásig
+              }
+
+
           }
+
+
       }
     }
     destroyArray(coords);

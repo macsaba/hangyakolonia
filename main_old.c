@@ -4,7 +4,6 @@
 #include <float.h>
 
 
-//#define NR_OF_DATAPOINTS 10;
 #define ALPHA 1.0
 #define BETA 1.0
 
@@ -26,7 +25,6 @@ int main() {
     float length [NR_OF_ANTS];
     float lengthMin [NR_OF_ANTS];
     int connections [NR_OF_DATAPOINTS][NR_OF_DATAPOINTS];
-    int numOfConnections [NR_OF_DATAPOINTS];
     //TODO: értelmes taut adni
     for(int r = 0; r < NR_OF_DATAPOINTS; r++)
     {
@@ -46,81 +44,52 @@ int main() {
     connections[3][8]=1; connections[4][2]=1; connections[4][5]=1; connections[5][1]=1; connections[5][4]=1; connections[5][8]=1; connections[6][7]=1; connections[7][6]=1; connections[7][8]=1; connections[7][9]=1;
     connections[8][3]=1; connections[8][9]=1; connections[8][5]=1; connections[8][7]=1; connections[9][7]=1; connections[9][8]=1;
 
-
-
     float** dist = getDistances(NR_OF_DATAPOINTS, coords, &connections[0][0]);
-    //iteration
 
-    //calculate the number of connections
-    for(int r = 0; r < NR_OF_DATAPOINTS; r++)
-    {
-        numOfConnections[r] = 0;
-        for(int s = 0; s < NR_OF_DATAPOINTS; s++)
-        {
-            numOfConnections[r] += connections[r][s];
-        }
-    }
 
+    //ITERATION
     for(int i = 0; i < NR_OF_ITERATIONS; i++)
     {
       //TODO: clear dtau
 
-      //"create ants"
+      //ANTS, "create ants"
       for(int ant = 0; ant < NR_OF_ANTS; ant++)
       {
+          int step = 0;
           route[ant][0] = start;
           length[ant] = 0;
           lengthMin[ant] = FLT_MAX;
-          int step = 0;
+
           //TODO: a két for ciklust össze lehetne vonni, ciklusváltozók eggyel eltolva, az első nevező számítást elvégezni itt
-          //PROBABILITY, calculates probabilities
+          //PROBABILITY, calculate probabilities
           for(int r = 0; r < NR_OF_DATAPOINTS; r++)
           {
-            //probability denominator
-            float pDenominator = 0;
-            for(int s = 0; s < NR_OF_DATAPOINTS; s++)
-            {
-                pDenominator += pow(tau[r][s], ALPHA)*pow((1/dist[r][s]), BETA)*connections[r][s];
-            }
-            //probability matrix
-            for(int s = 0; s < NR_OF_DATAPOINTS; s++)
-            {
-                p[r][s] = (pow(tau[r][s], ALPHA)*pow((1/dist[r][s]), BETA)*connections[r][s])/pDenominator;
-            }
-          }
-          for(int step = 0; step < 20; step++)
-          {
-              //ROULETTE
-              float roulette = rand()/RAND_MAX;
-              float sumP = 0;
-              int selection = 0;
-              int current = route[ant][step];
-              int loop = 0;
-
+              //probability denominator
+              float pDenominator = 0;
               for(int s = 0; s < NR_OF_DATAPOINTS; s++)
               {
-                  sumP += p[route[ant][step]][s];
-                  if(roulette < sumP)
-                  {
-                      selection = s;
-                      /*step++;
-                      route[ant][step] = s;
-                      length[ant] += dist[route[ant][step - 1]][route[ant][step]];*/
-                      break;
-                  }
+                  pDenominator += pow(tau[r][s], ALPHA)*pow((1/dist[r][s]), BETA)*connections[r][s];
               }
-              //check finish
-              if(selection == destination)
+              //probability matrix
+              for(int s = 0; s < NR_OF_DATAPOINTS; s++)
+              {
+                  p[r][s] = (pow(tau[r][s], ALPHA)*pow((1/dist[r][s]), BETA)*connections[r][s])/pDenominator;
+              }
+          }
+          //ROULETTE, step forward
+          float roulette = rand(100000)/100000;
+          float pSum = 0;
+          for(int s = 0; s < NR_OF_DATAPOINTS; s++)
+          {
+              pSum += p[route[ant][step]][s];
+              if(roulette < pSum)
               {
                   step++;
                   route[ant][step] = s;
-                  length[ant] += dist[route[ant][step - 1]][route[ant][step]];
+                  length[ant] += dist[route[ant][step - 1]][s];
                   break;
               }
-
           }
-
-
       }
     }
     destroyArray(coords);

@@ -5,35 +5,40 @@
 
 
 //#define NR_OF_DATAPOINTS 10;
-#define ALPHA 1.0
-#define BETA 1.0
+#define ALPHA 5.1
+#define BETA 0.15
+#define RHO 0.6
+#define Q 100.0
 
 int** randomCoords(int n);
 float** getDistances(int n, int** coords, int* connections);
+void listNetwork(int n, int** coords, int* connections);
 void destroyArray(int** arr);
 
 
 int main() {
     const int NR_OF_DATAPOINTS = 10;
-    const int NR_OF_ITERATIONS = 1;
-    const int NR_OF_ANTS = 1;
+    const int NR_OF_ITERATIONS = 3;
+    const int NR_OF_ANTS = 10;
     const int start = 1;
     const int destination = 9;
 
     float tau [NR_OF_DATAPOINTS][NR_OF_DATAPOINTS];
+    float dtau [NR_OF_DATAPOINTS][NR_OF_DATAPOINTS];
     float p [NR_OF_DATAPOINTS][NR_OF_DATAPOINTS];
     int route [NR_OF_ANTS][NR_OF_DATAPOINTS*10];
     float length [NR_OF_ANTS];
     float lengthMin [NR_OF_ANTS];
     int connections [NR_OF_DATAPOINTS][NR_OF_DATAPOINTS];
     int numOfConnections [NR_OF_DATAPOINTS];
-    //TODO: értelmes taut adni
+
     for(int r = 0; r < NR_OF_DATAPOINTS; r++)
     {
       for(int s = 0; s < NR_OF_DATAPOINTS; s++)
       {
           connections[r][s] = 0;
           tau[r][s] = 1;
+          dtau[r][s] = 0;
       }
     }
     //generate node coords
@@ -61,17 +66,28 @@ int main() {
         }
     }
 
+    //ITERATION
     for(int i = 0; i < NR_OF_ITERATIONS; i++)
     {
-      //TODO: clear dtau
+      //clear dtau
+      for(int r = 0; r < NR_OF_DATAPOINTS; r++)
+      {
+        for(int s = 0; s < NR_OF_DATAPOINTS; s++)
+        {
+            tau[r][s] = dtau[r][s] + (1-RHO)*tau[r][s];
+            dtau[r][s] = 0;
+        }
+      }
 
       //"create ants"
       for(int ant = 0; ant < NR_OF_ANTS; ant++)
       {
+          printf("\n %d. hangya:\n",ant );
           route[ant][0] = start;
+          printf("%d ", route[ant][0]);
           length[ant] = 0;
           lengthMin[ant] = FLT_MAX;
-          int step = 0;
+
           //TODO: a két for ciklust össze lehetne vonni, ciklusváltozók eggyel eltolva, az első nevező számítást elvégezni itt
           //PROBABILITY, calculates probabilities
           for(int r = 0; r < NR_OF_DATAPOINTS; r++)
@@ -88,10 +104,13 @@ int main() {
                 p[r][s] = (pow(tau[r][s], ALPHA)*pow((1/dist[r][s]), BETA)*connections[r][s])/pDenominator;
             }
           }
-          for(int step = 0; step < 20; step++)
+
+          int step = 0;
+
+          while(step < 3*NR_OF_DATAPOINTS)
           {
               //ROULETTE
-              float roulette = rand()/RAND_MAX;
+              float roulette = (double) rand() / (double) RAND_MAX;
               float sumP = 0;
               int selection = 0;
               int current = route[ant][step];
@@ -103,26 +122,29 @@ int main() {
                   if(roulette < sumP)
                   {
                       selection = s;
-                      /*step++;
-                      route[ant][step] = s;
-                      length[ant] += dist[route[ant][step - 1]][route[ant][step]];*/
                       break;
                   }
               }
+
+              //step forward
+
+              step++;
+              route[ant][step] = selection;
+              length[ant] += dist[route[ant][step - 1]][route[ant][step]];
+              printf("-> %d ", route[ant][step]);
+              //feromon
+              dtau[current][selection] += Q/length[ant];
+
               //check finish
               if(selection == destination)
               {
-                  step++;
-                  route[ant][step] = s;
-                  length[ant] += dist[route[ant][step - 1]][route[ant][step]];
+                  printf("\ntalalat\n");
                   break;
               }
-
           }
-
-
       }
     }
+    listNetwork(NR_OF_DATAPOINTS, coords, &connections[0][0]);
     destroyArray(coords);
     return 0;
 }
